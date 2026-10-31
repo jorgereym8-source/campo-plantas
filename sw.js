@@ -1,7 +1,7 @@
 // Campo · Plantas: guarda la app para que abra sin cobertura.
 // Siempre intenta la versión más nueva y, si no hay internet, usa la guardada.
-const CACHE = 'campo-plantas-v1';
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-512.png'];
+const CACHE = 'campo-plantas-v2';
+const ASSETS = ['./', './index.html', './especies.js', './manifest.webmanifest', './icon-180.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
