@@ -1,0 +1,15 @@
+{
+  "name": "Campo · Plantas",
+  "short_name": "Campo",
+  "description": "Toma de datos de plantas por parcela: altura, diámetros, daños y % seco, con exportación a CSV.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f4ef",
+  "theme_color": "#2f6b3f",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
