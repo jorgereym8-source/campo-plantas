@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Campo">
+<meta name="theme-color" content="#2f6b3f">
+<title>Campo · Plantas</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<style>
+:root{
+  --bg:#f3f4ef; --card:#ffffff; --ink:#1d241f; --muted:#66706a; --line:#dfe3db;
+  --acc:#2f6b3f; --acc-ink:#ffffff; --acc-soft:#e3efe5; --warn:#b3261e; --warn-soft:#fbe9e7;
+  --chip:#eef1ea; --sel:#2f6b3f;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#121512; --card:#1c211d; --ink:#e9eee9; --muted:#9aa59d; --line:#2e352f;
+    --acc:#6fbf82; --acc-ink:#0d1a10; --acc-soft:#22352a; --warn:#ff8a80; --warn-soft:#3a2120;
+    --chip:#262d27; --sel:#6fbf82;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.wrap{max-width:760px;margin:0 auto;padding:12px 16px 80px}
+header.top{display:flex;align-items:center;gap:10px;padding:8px 0 12px}
+header.top h1{font-size:22px;margin:0;flex:1;line-height:1.2}
+header.top .sub{display:block;font-size:13px;color:var(--muted);font-weight:400}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.btn{background:var(--chip);border-radius:12px;padding:10px 14px;font-weight:600;min-height:44px}
+.btn.pri{background:var(--acc);color:var(--acc-ink)}
+.btn.big{width:100%;padding:14px;font-size:17px;min-height:52px}
+.btn.warn{background:var(--warn-soft);color:var(--warn)}
+.btn.small{padding:6px 10px;min-height:36px;font-size:14px}
+.back{font-size:24px;width:44px;height:44px;border-radius:12px;background:var(--chip)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.row{display:flex;gap:10px}
+.row>*{flex:1;min-width:0}
+label.f{display:block;font-size:13px;color:var(--muted);margin:0 0 4px;font-weight:600}
+.req{color:var(--warn)}
+input,select,textarea{font:inherit;font-size:17px;width:100%;padding:11px 12px;border-radius:10px;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink);min-height:46px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:0;border-color:transparent}
+.field{margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--chip);border-radius:999px;padding:8px 13px;min-height:40px;min-width:44px;font-weight:600;font-size:15px}
+.chip.on{background:var(--sel);color:var(--acc-ink)}
+.scale .chip{flex:1;min-width:0;padding:8px 0;border-radius:10px}
+.hint{font-size:13px;color:var(--muted)}
+.list-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left}
+.list-item .grow{flex:1;min-width:0}
+.ttl{font-weight:700;font-size:17px}
+.meta{font-size:14px;color:var(--muted)}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--chip);margin:2px 4px 0 0}
+.badge.dead{background:var(--warn-soft);color:var(--warn)}
+.empty{text-align:center;color:var(--muted);padding:28px 10px}
+/* buscador */
+.search{position:relative}
+.results{margin-top:6px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.res{display:flex;gap:10px;align-items:baseline;width:100%;text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);min-height:48px}
+.res:last-child{border-bottom:0}
+.res.first{background:var(--acc-soft)}
+.ab{font-weight:800;font-family:ui-monospace,Menlo,monospace;min-width:64px}
+.sci{font-style:italic}
+.com{color:var(--muted);font-size:14px}
+.picked{display:flex;align-items:center;gap:10px;background:var(--acc-soft);border-radius:12px;padding:10px 12px;min-height:48px}
+.picked .grow{flex:1;min-width:0}
+.x{width:40px;height:40px;border-radius:10px;background:var(--card);font-size:18px}
+.recent{margin-top:8px}
+.recent .chip{font-family:ui-monospace,Menlo,monospace}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:48px;height:46px;border-radius:10px;background:var(--chip);font-size:22px;font-weight:700}
+.stepper input{text-align:center}
+.sticky{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:5}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+.err{color:var(--warn);font-size:14px;font-weight:600;margin:4px 0 10px}
+.sep{height:1px;background:var(--line);margin:14px 0}
+.totals{display:flex;gap:16px;font-size:14px;color:var(--muted)}
+.totals b{color:var(--ink);font-size:18px}
+dialog{border:0;border-radius:16px;padding:18px;background:var(--card);color:var(--ink);width:min(92vw,440px)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+h2{font-size:17px;margin:0 0 10px}
+.editing{outline:2px solid var(--acc)}
+@media (min-width:700px){ .wrap{padding-top:20px} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<dialog id="dlgEsp">
+  <h2>Nueva especie</h2>
+  <div class="field"><label class="f">Nombre científico <span class="req">*</span></label>
+    <input id="nsCient" autocomplete="off" autocapitalize="sentences" placeholder="Género epíteto"></div>
+  <div class="field"><label class="f">Nombre común</label>
+    <input id="nsCom" autocomplete="off"></div>
+  <div class="err" id="nsErr"></div>
+  <div class="row">
+    <button class="btn" id="nsCancel">Cancelar</button>
+    <button class="btn pri" id="nsOk">Añadir</button>
+  </div>
+</dialog>
+
+<input type="file" id="fileImport" accept=".json,application/json" hidden>
+
+<script>
+'use strict';
+
+/* ---------- Catálogo de especies por ecosistema (listas de prueba) ---------- */
+const ECOSISTEMAS = [
+  { id:'cumbre', nombre:'Cumbre de Tenerife', especies:[
+    ['Spartocytisus supranubius','retama del Teide'],
+    ['Adenocarpus viscosus','codeso de cumbre'],
+    ['Pterocephalus lasiospermus','rosalito de cumbre'],
+    ['Erysimum scoparium','alhelí del Teide'],
+    ['Echium wildpretii','tajinaste rojo'],
+    ['Echium auberianum','tajinaste picante'],
+    ['Descurainia bourgaeana','hierba pajonera'],
+    ['Scrophularia glabrata','fistulera'],
+    ['Nepeta teydea','tonática'],
+    ['Argyranthemum teneriffae','margarita del Teide'],
+    ['Micromeria lachnophylla','tomillo de cumbre'],
+    ['Viola cheiranthifolia','violeta del Teide'],
+    ['Silene nocteolens','canutillo del Teide'],
+    ['Cheirolophus teydis','cabezón del Teide'],
+    ['Pimpinella cumbrae','perejil de cumbre'],
+    ['Bencomia exstipulata','rosal del guanche'],
+    ['Rhamnus integrifolia','moralito'],
+    ['Juniperus cedrus','cedro canario'],
+    ['Pinus canariensis','pino canario'],
+  ]},
+  { id:'cardonal', nombre:'Cardonal-tabaibal', especies:[
+    ['Euphorbia canariensis','cardón'],
+    ['Euphorbia balsamifera','tabaiba dulce'],
+    ['Euphorbia lamarckii','tabaiba amarga'],
+    ['Kleinia neriifolia','verode'],
+    ['Periploca laevigata','cornical'],
+    ['Plocama pendula','balo'],
+    ['Launaea arborescens','aulaga'],
+    ['Rubia fruticosa','tasaigo'],
+    ['Schizogyne sericea','salado'],
+    ['Ceropegia fusca','cardoncillo'],
+  ]},
+  { id:'termofilo', nombre:'Bosque termófilo', especies:[
+    ['Juniperus turbinata','sabina'],
+    ['Dracaena draco','drago'],
+    ['Phoenix canariensis','palmera canaria'],
+    ['Olea cerasiformis','acebuche'],
+    ['Pistacia atlantica','almácigo'],
+    ['Pistacia lentiscus','lentisco'],
+    ['Hypericum canariense','granadillo'],
+    ['Rhamnus crenulata','espinero'],
+    ['Jasminum odoratissimum','jazmín silvestre'],
+    ['Visnea mocanera','mocán'],
+    ['Bosea yervamora','hediondo'],
+    ['Sideroxylon canariense','marmulán'],
+  ]},
+];
+const ORIENTACIONES = ['N','NE','E','SE','S','SO','O','NO','Llano'];
+
+/* ---------- Estado y guardado ---------- */
+const KEY = 'campo-plantas-v1';
+let S = load();
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if(d && Array.isArray(d.parcelas)) return Object.assign({especiesExtra:{}, observador:''}, d);
+  }catch(e){}
+  return { parcelas:[], especiesExtra:{}, observador:'' };
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); return true; }
+  catch(e){ alert('No se ha podido guardar en el dispositivo: ' + e.message); return false; }
+}
+if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
+
+/* ---------- Utilidades ---------- */
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+const hoy = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+function parseNum(v){
+  if(v==null) return null;
+  v = String(v).trim().replace(',', '.');
+  if(v==='') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : NaN;
+}
+const fmt = n => (n==null || n==='') ? '' : String(n).replace('.', ',');
+function abrev(cient){
+  const p = String(cient).trim().split(/\s+/);
+  const g = (p[0]||'').slice(0,3), e = (p[1]||'').slice(0,3);
+  return (g.charAt(0).toUpperCase() + g.slice(1).toLowerCase()) + (e ? ' ' + e.toLowerCase() : '');
+}
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+const eco = id => ECOSISTEMAS.find(e=>e.id===id);
+const ecoNombre = id => (eco(id)||{}).nombre || id || '';
+function especiesDe(ecoId){
+  const base = (eco(ecoId)||{especies:[]}).especies.map(([c,n])=>({cient:c, comun:n}));
+  const extra = (S.especiesExtra[ecoId]||[]);
+  const all = base.concat(extra);
+  all.forEach(e=>{ e.ab = abrev(e.cient); });
+  return all;
+}
+const parcela = id => S.parcelas.find(p=>p.id===id);
+const totalPlantas = p => p.registros.reduce((s,r)=>s + (r.mult==null ? 1 : r.mult), 0);
+
+/* ---------- Buscador de especies ---------- */
+function buscar(lista, q){
+  const nq = norm(q);
+  if(!nq) return [];
+  const compact = nq.replace(/[\s.]+/g,'');
+  const toks = nq.split(/\s+/);
+  const out = [];
+  for(const e of lista){
+    const ab = norm(e.ab), abC = ab.replace(/\s+/g,'');
+    const sci = norm(e.cient), sciW = sci.split(/\s+/);
+    const com = norm(e.comun);
+    let rank = -1;
+    if(abC.startsWith(compact) || ab.startsWith(nq)) rank = 0;
+    else if(sci.startsWith(nq)) rank = 1;
+    else if(com && com.startsWith(nq)) rank = 2;
+    else if(toks.length >= 2 && toks.every((t,i)=> sciW[i] && sciW[i].startsWith(t))) rank = 1;
+    if(rank >= 0) out.push({e, rank});
+  }
+  out.sort((a,b)=> a.rank-b.rank || a.e.cient.localeCompare(b.e.cient));
+  return out.slice(0,8).map(x=>x.e);
+}
+
+/* ---------- Navegación ---------- */
+let V = { vista:'inicio' };   // inicio | ficha | parcela
+function ir(v){ V = v; render(); window.scrollTo(0,0); }
+
+function render(){
+  if(V.vista==='ficha') return renderFicha();
+  if(V.vista==='parcela') return renderParcela();
+  return renderInicio();
+}
+
+/* ---------- Inicio ---------- */
+function renderInicio(){
+  const ps = [...S.parcelas].sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||'') || b.creada - a.creada);
+  $('#app').innerHTML = `
+    <header class="top"><h1>Campo · Plantas<span class="sub">Toma de datos por parcela</span></h1></header>
+    <button class="btn pri big" id="nueva">+ Nueva parcela</button>
+    <div style="height:14px"></div>
+    ${ps.length ? ps.map(p=>`
+      <div class="card"><button class="list-item" data-abrir="${p.id}">
+        <div class="grow">
+          <div class="ttl">${esc(p.nombre)}</div>
+          <div class="meta">${esc(ecoNombre(p.ecosistema))} · ${esc(fechaBonita(p.fecha))}${p.observador ? ' · ' + esc(p.observador) : ''}</div>
+          <div class="meta">${p.registros.length} registros · ${fmt(totalPlantas(p))} plantas</div>
+        </div><span style="font-size:22px;color:var(--muted)">›</span>
+      </button></div>`).join('')
+      : `<div class="empty">Todavía no hay parcelas.<br>Crea la primera para empezar a medir.</div>`}
+    ${ps.length ? `
+      <div class="sep"></div>
+      <button class="btn big" id="expTodo">Exportar todas las parcelas (CSV)</button>` : ''}
+    <div class="sep"></div>
+    <div class="card">
+      <h2>Copia de seguridad</h2>
+      <p class="hint" style="margin-top:0">Los datos se guardan solo en este dispositivo. Haz una copia de vez en cuando o al terminar cada salida.</p>
+      <div class="row">
+        <button class="btn" id="bkSave">Guardar copia</button>
+        <button class="btn" id="bkLoad">Cargar copia</button>
+      </div>
+    </div>`;
+  $('#nueva').onclick = ()=> ir({vista:'ficha', id:null});
+  document.querySelectorAll('[data-abrir]').forEach(b=> b.onclick = ()=> ir({vista:'parcela', id:b.dataset.abrir}));
+  const et = $('#expTodo'); if(et) et.onclick = ()=> exportarCSV(S.parcelas, 'campo_todas_' + hoy());
+  $('#bkSave').onclick = guardarCopia;
+  $('#bkLoad').onclick = ()=> $('#fileImport').click();
+}
+function fechaBonita(f){
+  if(!f) return 'sin fecha';
+  const [y,m,d] = f.split('-'); return `${d}/${m}/${y}`;
+}
+
+/* ---------- Ficha de parcela ---------- */
+function renderFicha(){
+  const p = V.id ? parcela(V.id) : null;
+  const d = p || { nombre:'', ecosistema:'', elevacion:null, pendiente:null, orientacion:'', fecha:hoy(), observador:S.observador||'', notas:'' };
+  $('#app').innerHTML = `
+    <header class="top"><button class="back" id="volver">‹</button><h1>${p ? 'Editar ficha' : 'Nueva parcela'}</h1></header>
+    <div class="card">
+      <div class="field"><label class="f">Nombre de la parcela <span class="req">*</span></label>
+        <input id="fNombre" value="${esc(d.nombre)}" autocomplete="off" placeholder="Ej. P-03 Llano de Ucanca"></div>
+      <div class="field"><label class="f">Ecosistema <span class="req">*</span></label>
+        <select id="fEco"><option value="">Elige…</option>
+          ${ECOSISTEMAS.map(e=>`<option value="${e.id}" ${e.id===d.ecosistema?'selected':''}>${esc(e.nombre)}</option>`).join('')}
+        </select></div>
+      <div class="row">
+        <div class="field"><label class="f">Fecha</label><input type="date" id="fFecha" value="${esc(d.fecha)}"></div>
+        <div class="field"><label class="f">Tomado por</label><input id="fObs" value="${esc(d.observador)}" autocomplete="off"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="f">Elevación (m)</label><input id="fElev" inputmode="decimal" value="${fmt(d.elevacion)}"></div>
+        <div class="field"><label class="f">Pendiente (°)</label><input id="fPend" inputmode="decimal" value="${fmt(d.pendiente)}"></div>
+      </div>
+      <div class="field"><label class="f">Orientación</label>
+        <div class="chips" id="fOri">${ORIENTACIONES.map(o=>`<button class="chip ${o===d.orientacion?'on':''}" data-o="${o}">${o}</button>`).join('')}</div></div>
+      <div class="field"><label class="f">Notas</label><textarea id="fNotas" rows="2">${esc(d.notas)}</textarea></div>
+      <div class="err" id="fErr"></div>
+      <button class="btn pri big" id="fGuardar">${p ? 'Guardar ficha' : 'Crear parcela y empezar'}</button>
+    </div>
+    ${p ? `<button class="btn warn big" id="fBorrar">Eliminar parcela</button>` : ''}`;
+  let ori = d.orientacion || '';
+  document.querySelectorAll('#fOri .chip').forEach(c=> c.onclick = ()=>{
+    ori = (ori===c.dataset.o) ? '' : c.dataset.o;
+    document.querySelectorAll('#fOri .chip').forEach(x=>x.classList.toggle('on', x.dataset.o===ori));
+  });
+  $('#volver').onclick = ()=> ir(p ? {vista:'parcela', id:p.id} : {vista:'inicio'});
+  $('#fGuardar').onclick = ()=>{
+    const nombre = $('#fNombre').value.trim(), ecosistema = $('#fEco').value;
+    const elevacion = parseNum($('#fElev').value), pendiente = parseNum($('#fPend').value);
+    const errs = [];
+    if(!nombre) errs.push('el nombre');
+    if(!ecosistema) errs.push('el ecosistema');
+    if(Number.isNaN(elevacion)) errs.push('una elevación válida');
+    if(Number.isNaN(pendiente)) errs.push('una pendiente válida');
+    if(errs.length){ $('#fErr').textContent = 'Falta ' + errs.join(', ') + '.'; return; }
+    const datos = { nombre, ecosistema, elevacion, pendiente, orientacion:ori,
+      fecha:$('#fFecha').value, observador:$('#fObs').value.trim(), notas:$('#fNotas').value.trim() };
+    S.observador = datos.observador || S.observador;
+    let id;
+    if(p){ Object.assign(p, datos); id = p.id; }
+    else { id = uid(); S.parcelas.push(Object.assign({ id, creada:Date.now(), siguienteN:1, registros:[] }, datos)); }
+    save(); ir({vista:'parcela', id});
+  };
+  if(p) $('#fBorrar').onclick = ()=>{
+    if(!confirm(`¿Eliminar la parcela «${p.nombre}» y sus ${p.registros.length} registros?`)) return;
+    if(p.registros.length && !confirm('Esto no se puede deshacer. ¿Seguro?')) return;
+    S.parcelas = S.parcelas.filter(x=>x.id!==p.id); save(); ir({vista:'inicio'});
+  };
+  if(!p) $('#fNombre').focus();
+}
+
+/* ---------- Parcela: formulario de registro + lista ---------- */
+let F = null; // estado del formulario de registro
+function formVacio(){ return { editId:null, especie:null, q:'', conejo:null, muflon:null }; }
+
+function renderParcela(){
+  const p = parcela(V.id);
+  if(!p) return ir({vista:'inicio'});
+  if(!F || F.parcela !== p.id){ F = formVacio(); F.parcela = p.id; }
+  const regs = [...p.registros].reverse();
+  const recientes = [];
+  for(const r of regs){ if(!recientes.includes(r.especie)) recientes.push(r.especie); if(recientes.length>=6) break; }
+  const ed = F.editId ? p.registros.find(r=>r.id===F.editId) : null;
+
+  $('#app').innerHTML = `
+    <header class="top">
+      <button class="back" id="volver">‹</button>
+      <h1>${esc(p.nombre)}<span class="sub">${esc(ecoNombre(p.ecosistema))} · ${esc(fechaBonita(p.fecha))}${p.elevacion!=null?' · '+fmt(p.elevacion)+' m':''}${p.orientacion?' · '+esc(p.orientacion):''}</span></h1>
+      <button class="btn small" id="editFicha">Ficha</button>
+    </header>
+
+    <div class="card ${ed?'editing':''}" id="formCard">
+      <h2>${ed ? 'Editando registro #' + ed.n : 'Registro #' + p.siguienteN}</h2>
+      <div class="field search"><label class="f">Especie <span class="req">*</span></label>
+        <div id="espBox"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="f">Altura (cm) <span class="req">*</span></label><input id="rAlt" inputmode="decimal" enterkeyhint="next"></div>
+        <div class="field"><label class="f">Diám. 1 (cm) <span class="req">*</span></label><input id="rD1" inputmode="decimal" enterkeyhint="next"></div>
+        <div class="field"><label class="f">Diám. 2 (cm) <span class="req">*</span></label><input id="rD2" inputmode="decimal" enterkeyhint="done"></div>
+      </div>
+      <div class="sep"></div>
+      <p class="hint" style="margin:0 0 10px">Opcional — si lo dejas vacío no pasa nada.</p>
+      <div class="field"><label class="f">Multiplicador (plantas parecidas)</label>
+        <div class="stepper"><button id="mMenos">−</button><input id="rMult" inputmode="numeric" placeholder="1"><button id="mMas">+</button></div></div>
+      <div class="field"><label class="f">Daño por conejo <span class="hint" id="lblConejo"></span></label>
+        <div class="chips scale" data-dano="conejo">${[0,1,2,3,4,5].map(n=>`<button class="chip" data-v="${n}">${n}</button>`).join('')}</div></div>
+      <div class="field"><label class="f">Daño por muflón <span class="hint" id="lblMuflon"></span></label>
+        <div class="chips scale" data-dano="muflon">${[0,1,2,3,4,5].map(n=>`<button class="chip" data-v="${n}">${n}</button>`).join('')}</div></div>
+      <div class="field"><label class="f">% seco <span class="badge dead" id="lblMuerta" hidden>Muerta</span></label>
+        <div class="row" style="align-items:center">
+          <input id="rSeco" inputmode="decimal" placeholder="—" style="flex:0 0 96px">
+          <div class="chips">${[0,25,50,75,100].map(n=>`<button class="chip" data-seco="${n}">${n}</button>`).join('')}</div>
+        </div></div>
+      <div class="field"><label class="f">Notas</label><input id="rNotas" autocomplete="off"></div>
+      <div class="err" id="rErr"></div>
+      <div class="sticky">
+        ${ed ? `<div class="row"><button class="btn big" id="rCancel">Cancelar</button><button class="btn pri big" id="rGuardar">Guardar cambios</button></div>
+                <div style="height:8px"></div><button class="btn warn big" id="rBorrar">Borrar registro</button>`
+             : `<button class="btn pri big" id="rGuardar">Guardar y siguiente</button>`}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="align-items:center">
+        <div class="totals"><span><b>${p.registros.length}</b> registros</span><span><b>${fmt(totalPlantas(p))}</b> plantas</span></div>
+        <button class="btn small" id="expParcela" style="flex:0 0 auto">Exportar CSV</button>
+      </div>
+    </div>
+    ${regs.length ? regs.map(r=>filaRegistro(r)).join('') : `<div class="empty">Aún no hay registros en esta parcela.</div>`}
+  `;
+
+  // Rellenar si se está editando
+  if(ed){
+    $('#rAlt').value = fmt(ed.altura); $('#rD1').value = fmt(ed.d1); $('#rD2').value = fmt(ed.d2);
+    $('#rMult').value = ed.mult==null ? '' : fmt(ed.mult);
+    $('#rSeco').value = fmt(ed.seco); $('#rNotas').value = ed.notas || '';
+  }
+  pintarEspecie(p, recientes);
+  pintarDanos(); pintarSeco();
+
+  $('#volver').onclick = ()=>{ F = null; ir({vista:'inicio'}); };
+  $('#editFicha').onclick = ()=> ir({vista:'ficha', id:p.id});
+  $('#expParcela').onclick = ()=> exportarCSV([p], 'campo_' + slug(p.nombre) + '_' + (p.fecha||hoy()));
+
+  // Saltar de campo con "siguiente"
+  const orden = ['#rAlt','#rD1','#rD2'];
+  orden.forEach((sel,i)=> $(sel).addEventListener('keydown', ev=>{
+    if(ev.key==='Enter'){ ev.preventDefault(); if(orden[i+1]) $(orden[i+1]).focus(); else $(sel).blur(); }
+  }));
+
+  $('#mMenos').onclick = ()=>{ const v = parseNum($('#rMult').value) || 1; $('#rMult').value = v>2 ? v-1 : ''; };
+  $('#mMas').onclick = ()=>{ const v = parseNum($('#rMult').value) || 1; $('#rMult').value = v+1; };
+  document.querySelectorAll('[data-dano]').forEach(g=>{
+    g.querySelectorAll('.chip').forEach(c=> c.onclick = ()=>{
+      const k = g.dataset.dano, v = Number(c.dataset.v);
+      F[k] = (F[k]===v) ? null : v; pintarDanos();
+    });
+  });
+  document.querySelectorAll('[data-seco]').forEach(c=> c.onclick = ()=>{
+    $('#rSeco').value = ($('#rSeco').value === c.dataset.seco) ? '' : c.dataset.seco; pintarSeco();
+  });
+  $('#rSeco').addEventListener('input', pintarSeco);
+
+  $('#rGuardar').onclick = ()=> guardarRegistro(p);
+  if(ed){
+    $('#rCancel').onclick = ()=>{ F = formVacio(); F.parcela = p.id; renderParcela(); };
+    $('#rBorrar').onclick = ()=>{
+      if(!confirm(`¿Borrar el registro #${ed.n}?`)) return;
+      p.registros = p.registros.filter(r=>r.id!==ed.id); save();
+      F = formVacio(); F.parcela = p.id; renderParcela(); toast('Registro borrado');
+    };
+  }
+  document.querySelectorAll('[data-reg]').forEach(b=> b.onclick = ()=>{
+    const r = p.registros.find(x=>x.id===b.dataset.reg);
+    F = formVacio(); F.parcela = p.id; F.editId = r.id;
+    F.especie = r.especie; F.conejo = r.conejo; F.muflon = r.muflon;
+    renderParcela(); window.scrollTo({top:0, behavior:'smooth'});
+  });
+}
+
+function filaRegistro(r){
+  const dano = v => v==null ? '–' : v;
+  return `<div class="card"><button class="list-item" data-reg="${r.id}">
+    <div class="grow">
+      <div class="ttl"><span class="meta">#${r.n}</span> ${esc(abrev(r.especie))}${r.mult!=null && r.mult!==1 ? ` <span class="badge">×${fmt(r.mult)}</span>` : ''}</div>
+      <div class="meta">Alt ${fmt(r.altura)} · Ø ${fmt(r.d1)} × ${fmt(r.d2)} cm</div>
+      <div>${r.conejo!=null?`<span class="badge">Conejo ${dano(r.conejo)}</span>`:''}${r.muflon!=null?`<span class="badge">Muflón ${dano(r.muflon)}</span>`:''}${r.seco!=null?`<span class="badge ${r.seco>=100?'dead':''}">${r.seco>=100?'Muerta':'Seco '+fmt(r.seco)+'%'}</span>`:''}${r.notas?`<span class="badge">📝</span>`:''}</div>
+    </div><span style="color:var(--muted)">Editar</span>
+  </button></div>`;
+}
+
+function pintarEspecie(p, recientes){
+  const box = $('#espBox');
+  const lista = especiesDe(p.ecosistema);
+  if(F.especie){
+    const e = lista.find(x=>x.cient===F.especie) || {cient:F.especie, comun:'', ab:abrev(F.especie)};
+    box.innerHTML = `<div class="picked"><span class="ab">${esc(e.ab)}</span>
+      <div class="grow"><div class="sci">${esc(e.cient)}</div>${e.comun?`<div class="com">${esc(e.comun)}</div>`:''}</div>
+      <button class="x" id="espQuitar" aria-label="Cambiar especie">✕</button></div>`;
+    $('#espQuitar').onclick = ()=>{ F.especie = null; F.q = ''; pintarEspecie(p, recientes); $('#espQ').focus(); };
+    return;
+  }
+  box.innerHTML = `<input id="espQ" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+      placeholder="Escribe: Spa sup, retama, Echium…" value="${esc(F.q)}">
+    <div id="espRes"></div>
+    ${recientes.length ? `<div class="chips recent">${recientes.map(c=>`<button class="chip" data-rec="${esc(c)}">${esc(abrev(c))}</button>`).join('')}</div>` : ''}`;
+  const q = $('#espQ');
+  const elegir = cient => { F.especie = cient; F.q = ''; pintarEspecie(p, recientes); $('#rAlt').focus(); };
+  const pintarRes = ()=>{
+    F.q = q.value;
+    const res = buscar(lista, q.value);
+    const r = $('#espRes');
+    if(!q.value.trim()){ r.innerHTML = ''; return; }
+    r.innerHTML = `<div class="results">${res.map((e,i)=>`
+        <button class="res ${i===0?'first':''}" data-pick="${esc(e.cient)}"><span class="ab">${esc(e.ab)}</span>
+          <span><span class="sci">${esc(e.cient)}</span>${e.comun?` <span class="com">· ${esc(e.comun)}</span>`:''}</span></button>`).join('')}
+        <button class="res" id="espNueva"><span class="ab">+</span><span>Añadir especie nueva${res.length?'':' (no hay coincidencias)'}</span></button>
+      </div>`;
+    r.querySelectorAll('[data-pick]').forEach(b=> b.onclick = ()=> elegir(b.dataset.pick));
+    $('#espNueva').onclick = ()=> nuevaEspecie(p, q.value, elegir);
+  };
+  q.addEventListener('input', pintarRes);
+  q.addEventListener('keydown', ev=>{
+    if(ev.key==='Enter'){ ev.preventDefault(); const res = buscar(lista, q.value); if(res[0]) elegir(res[0].cient); }
+  });
+  box.querySelectorAll('[data-rec]').forEach(b=> b.onclick = ()=> elegir(b.dataset.rec));
+  pintarRes();
+}
+
+function nuevaEspecie(p, texto, elegir){
+  const dlg = $('#dlgEsp');
+  const t = texto.trim();
+  const pareceCient = /^[A-Za-z]+\s+[a-z]/.test(t) && t.split(/\s+/).length>=2;
+  $('#nsCient').value = pareceCient ? t.charAt(0).toUpperCase()+t.slice(1) : '';
+  $('#nsCom').value = pareceCient ? '' : t;
+  $('#nsErr').textContent = '';
+  dlg.showModal();
+  $('#nsCancel').onclick = ()=> dlg.close();
+  $('#nsOk').onclick = ()=>{
+    const c = $('#nsCient').value.trim().replace(/\s+/g,' ');
+    if(c.split(' ').length < 2){ $('#nsErr').textContent = 'Pon género y epíteto (dos palabras).'; return; }
+    const cient = c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
+    const ya = especiesDe(p.ecosistema).find(e=> norm(e.cient)===norm(cient));
+    if(!ya){
+      (S.especiesExtra[p.ecosistema] = S.especiesExtra[p.ecosistema] || []).push({cient, comun:$('#nsCom').value.trim()});
+      save();
+    }
+    dlg.close(); elegir(ya ? ya.cient : cient);
+  };
+}
+
+function pintarDanos(){
+  ['conejo','muflon'].forEach(k=>{
+    document.querySelectorAll(`[data-dano="${k}"] .chip`).forEach(c=> c.classList.toggle('on', Number(c.dataset.v)===F[k]));
+    $(k==='conejo' ? '#lblConejo' : '#lblMuflon').textContent = F[k]==null ? '· no observado' : '';
+  });
+}
+function pintarSeco(){
+  const v = $('#rSeco').value.trim();
+  document.querySelectorAll('[data-seco]').forEach(c=> c.classList.toggle('on', c.dataset.seco===v));
+  const n = parseNum(v);
+  $('#lblMuerta').hidden = !(n!=null && n>=100);
+}
+
+function guardarRegistro(p){
+  const altura = parseNum($('#rAlt').value), d1 = parseNum($('#rD1').value), d2 = parseNum($('#rD2').value);
+  const mult = parseNum($('#rMult').value), seco = parseNum($('#rSeco').value);
+  const errs = [];
+  if(!F.especie) errs.push('elige la especie');
+  if(altura==null || Number.isNaN(altura) || altura<0) errs.push('altura');
+  if(d1==null || Number.isNaN(d1) || d1<0) errs.push('diámetro 1');
+  if(d2==null || Number.isNaN(d2) || d2<0) errs.push('diámetro 2');
+  if(Number.isNaN(mult) || (mult!=null && (mult<1 || !Number.isInteger(mult)))) errs.push('multiplicador (número entero ≥ 1)');
+  if(Number.isNaN(seco) || (seco!=null && (seco<0 || seco>100))) errs.push('% seco (0–100)');
+  if(errs.length){ $('#rErr').textContent = 'Revisa: ' + errs.join(', ') + '.'; return; }
+  const datos = { especie:F.especie, altura, d1, d2, mult, conejo:F.conejo, muflon:F.muflon, seco, notas:$('#rNotas').value.trim() };
+  let msg;
+  if(F.editId){
+    const r = p.registros.find(x=>x.id===F.editId); Object.assign(r, datos); msg = 'Registro #' + r.n + ' actualizado';
+  } else {
+    const n = p.siguienteN++;
+    p.registros.push(Object.assign({ id:uid(), n, hora:new Date().toISOString() }, datos));
+    msg = 'Guardado #' + n;
+  }
+  if(!save()) return;
+  F = formVacio(); F.parcela = p.id;
+  renderParcela(); window.scrollTo(0,0); toast(msg);
+  const q = $('#espQ'); if(q) q.focus();
+}
+
+/* ---------- Exportación ---------- */
+const slug = s => norm(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'parcela';
+function celda(v){
+  v = v==null ? '' : String(v);
+  return /[;"\n\r]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v;
+}
+function exportarCSV(parcelas, nombre){
+  const cab = ['parcela','ecosistema','fecha','tomado_por','elevacion_m','pendiente_grados','orientacion','notas_parcela',
+    'n_registro','especie','altura_cm','diametro1_cm','diametro2_cm','multiplicador',
+    'dano_conejo','dano_muflon','seco_pct','muerta','notas'];
+  const filas = [cab];
+  let total = 0;
+  for(const p of parcelas){
+    for(const r of p.registros){
+      total++;
+      filas.push([p.nombre, ecoNombre(p.ecosistema), p.fecha ? fechaBonita(p.fecha) : '', p.observador,
+        fmt(p.elevacion), fmt(p.pendiente), p.orientacion, p.notas,
+        r.n, r.especie, fmt(r.altura), fmt(r.d1), fmt(r.d2), r.mult==null ? 1 : fmt(r.mult),
+        r.conejo==null ? 'no observado' : r.conejo, r.muflon==null ? 'no observado' : r.muflon,
+        fmt(r.seco), r.seco==null ? '' : (r.seco>=100 ? 'sí' : 'no'), r.notas]);
+    }
+  }
+  if(!total){ toast('No hay registros que exportar'); return; }
+  const csv = filas.map(f=>f.map(celda).join(';')).join('\r\n');
+  compartir(nombre + '.csv', '﻿' + csv, 'text/csv');
+}
+async function compartir(nombre, contenido, tipo){
+  const blob = new Blob([contenido], {type:tipo});
+  try{
+    const file = new File([blob], nombre, {type:tipo});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:nombre}); return;
+    }
+  }catch(e){ if(e && e.name==='AbortError') return; }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+function guardarCopia(){
+  compartir('campo-plantas_copia_' + hoy() + '.json', JSON.stringify(S, null, 1), 'application/json');
+}
+$('#fileImport').addEventListener('change', async ev=>{
+  const f = ev.target.files[0]; ev.target.value = '';
+  if(!f) return;
+  try{
+    const d = JSON.parse(await f.text());
+    if(!d || !Array.isArray(d.parcelas)) throw new Error('El archivo no es una copia de esta app.');
+    if(!confirm(`La copia tiene ${d.parcelas.length} parcelas. ¿Reemplazar los datos de este dispositivo?`)) return;
+    S = Object.assign({especiesExtra:{}, observador:''}, d); save(); F = null; ir({vista:'inicio'}); toast('Copia cargada');
+  }catch(e){ alert('No se ha podido cargar: ' + e.message); }
+});
+
+/* ---------- Arranque ---------- */
+render();
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+</script>
+</body>
+</html>
