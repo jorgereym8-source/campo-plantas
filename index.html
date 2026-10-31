@@ -75,8 +75,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-off
 .picked{display:flex;align-items:center;gap:10px;background:var(--acc-soft);border-radius:12px;padding:10px 12px;min-height:48px}
 .picked .grow{flex:1;min-width:0}
 .x{width:40px;height:40px;border-radius:10px;background:var(--card);font-size:18px}
-.recent{margin-top:8px}
-.recent .chip{font-family:ui-monospace,Menlo,monospace}
+.frec{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
+.fbtn{background:var(--chip);border-radius:12px;min-height:54px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.fbtn .fab{font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:14px;line-height:1.15;text-align:center}
+.fbtn .fn{font-size:11px;color:var(--muted);font-weight:600}
+.fbtn.on{background:var(--sel);color:var(--acc-ink)}
+.fbtn.on .fn{color:inherit;opacity:.8}
+.res.fuera{opacity:.72}
+.res .grow{flex:1;min-width:0}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--chip);color:var(--muted);margin-left:6px;vertical-align:1px}
+.tag.am{background:var(--warn-soft);color:var(--warn)}
 .stepper{display:flex;align-items:center;gap:6px}
 .stepper button{width:48px;height:46px;border-radius:10px;background:var(--chip);font-size:22px;font-weight:700}
 .stepper input{text-align:center}
@@ -114,59 +122,13 @@ h2{font-size:17px;margin:0 0 10px}
 
 <input type="file" id="fileImport" accept=".json,application/json" hidden>
 
+<script src="especies.js"></script>
 <script>
 'use strict';
 
-/* ---------- Catálogo de especies por ecosistema (listas de prueba) ---------- */
-const ECOSISTEMAS = [
-  { id:'cumbre', nombre:'Cumbre de Tenerife', especies:[
-    ['Spartocytisus supranubius','retama del Teide'],
-    ['Adenocarpus viscosus','codeso de cumbre'],
-    ['Pterocephalus lasiospermus','rosalito de cumbre'],
-    ['Erysimum scoparium','alhelí del Teide'],
-    ['Echium wildpretii','tajinaste rojo'],
-    ['Echium auberianum','tajinaste picante'],
-    ['Descurainia bourgaeana','hierba pajonera'],
-    ['Scrophularia glabrata','fistulera'],
-    ['Nepeta teydea','tonática'],
-    ['Argyranthemum teneriffae','margarita del Teide'],
-    ['Micromeria lachnophylla','tomillo de cumbre'],
-    ['Viola cheiranthifolia','violeta del Teide'],
-    ['Silene nocteolens','canutillo del Teide'],
-    ['Cheirolophus teydis','cabezón del Teide'],
-    ['Pimpinella cumbrae','perejil de cumbre'],
-    ['Bencomia exstipulata','rosal del guanche'],
-    ['Rhamnus integrifolia','moralito'],
-    ['Juniperus cedrus','cedro canario'],
-    ['Pinus canariensis','pino canario'],
-  ]},
-  { id:'cardonal', nombre:'Cardonal-tabaibal', especies:[
-    ['Euphorbia canariensis','cardón'],
-    ['Euphorbia balsamifera','tabaiba dulce'],
-    ['Euphorbia lamarckii','tabaiba amarga'],
-    ['Kleinia neriifolia','verode'],
-    ['Periploca laevigata','cornical'],
-    ['Plocama pendula','balo'],
-    ['Launaea arborescens','aulaga'],
-    ['Rubia fruticosa','tasaigo'],
-    ['Schizogyne sericea','salado'],
-    ['Ceropegia fusca','cardoncillo'],
-  ]},
-  { id:'termofilo', nombre:'Bosque termófilo', especies:[
-    ['Juniperus turbinata','sabina'],
-    ['Dracaena draco','drago'],
-    ['Phoenix canariensis','palmera canaria'],
-    ['Olea cerasiformis','acebuche'],
-    ['Pistacia atlantica','almácigo'],
-    ['Pistacia lentiscus','lentisco'],
-    ['Hypericum canariense','granadillo'],
-    ['Rhamnus crenulata','espinero'],
-    ['Jasminum odoratissimum','jazmín silvestre'],
-    ['Visnea mocanera','mocán'],
-    ['Bosea yervamora','hediondo'],
-    ['Sideroxylon canariense','marmulán'],
-  ]},
-];
+/* ---------- Ecosistemas: pisos de vegetación de Tenerife (ver especies.js) ---------- */
+const ECOSISTEMAS = PISOS.concat([{ id:'todo', nombre:'Toda Tenerife' }]);
+const ECO_ANTIGUOS = { cumbre:'retamar', termofilo:'bos_termo' };   // ids de la primera versión
 const ORIENTACIONES = ['N','NE','E','SE','S','SO','O','NO','Llano'];
 
 /* ---------- Estado y guardado ---------- */
@@ -175,9 +137,20 @@ let S = load();
 function load(){
   try{
     const d = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if(d && Array.isArray(d.parcelas)) return Object.assign({especiesExtra:{}, observador:''}, d);
+    if(d && Array.isArray(d.parcelas)) return migrar(d);
   }catch(e){}
-  return { parcelas:[], especiesExtra:{}, observador:'' };
+  return { parcelas:[], especiesNuevas:[], observador:'' };
+}
+function migrar(d){
+  d = Object.assign({ especiesNuevas:[], observador:'' }, d);
+  // Primera versión: especies añadidas guardadas por ecosistema
+  if(d.especiesExtra){
+    for(const k in d.especiesExtra) for(const e of d.especiesExtra[k])
+      if(!d.especiesNuevas.some(x=>x.cient===e.cient)) d.especiesNuevas.push(e);
+    delete d.especiesExtra;
+  }
+  for(const p of d.parcelas) if(ECO_ANTIGUOS[p.ecosistema]) p.ecosistema = ECO_ANTIGUOS[p.ecosistema];
+  return d;
 }
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(S)); return true; }
@@ -199,47 +172,86 @@ function parseNum(v){
   return Number.isFinite(n) ? n : NaN;
 }
 const fmt = n => (n==null || n==='') ? '' : String(n).replace('.', ',');
-function abrev(cient){
-  const p = String(cient).trim().split(/\s+/);
-  const g = (p[0]||'').slice(0,3), e = (p[1]||'').slice(0,3);
-  return (g.charAt(0).toUpperCase() + g.slice(1).toLowerCase()) + (e ? ' ' + e.toLowerCase() : '');
+/* Abreviaturas: 3 letras del género + 3 del epíteto. Si dos taxones coinciden,
+   se distinguen con la subespecie (Aeo dod dod / Aeo dod mil) o alargando el género (Sali can / Salv can). */
+function partes(cient){
+  const w = String(cient).trim().split(/\s+/);
+  const i = w.findIndex(x=>/^(subsp|var)\.?$/i.test(x));
+  return { gen:w[0]||'', ep:w[1]||'', infra: i>1 ? (w[i+1]||'') : '' };
 }
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+function asignarAbrev(lista){
+  const corta = e => { const p = partes(e.cient); return cap(p.gen.slice(0,3)) + (p.ep ? ' ' + p.ep.slice(0,3).toLowerCase() : ''); };
+  const grupos = {};
+  for(const e of lista){ e.ab = corta(e); (grupos[e.ab] = grupos[e.ab] || []).push(e); }
+  for(const g of Object.values(grupos)){
+    if(g.length < 2) continue;
+    const ps = g.map(e=>partes(e.cient));
+    const mismaEspecie = ps.every(p=> p.gen===ps[0].gen && p.ep===ps[0].ep);
+    if(mismaEspecie){ g.forEach((e,i)=>{ if(ps[i].infra) e.ab += ' ' + ps[i].infra.slice(0,3).toLowerCase(); }); continue; }
+    for(let n=4; n<=12; n++){
+      const abs = ps.map(p=> cap(p.gen.slice(0,n)) + ' ' + p.ep.slice(0,3).toLowerCase());
+      if(new Set(abs).size === abs.length || n===12){ g.forEach((e,i)=> e.ab = abs[i]); break; }
+    }
+  }
+  return lista;
+}
+let _catalogo = null;
+function catalogo(){
+  if(_catalogo) return _catalogo;
+  const base = ESPECIES_TF.map(([cient, comun, pisos, am, sin])=>({ cient, comun, pisos, am, sin }));
+  const nuevas = (S.especiesNuevas||[]).filter(n=> !base.some(b=> norm(b.cient)===norm(n.cient)))
+    .map(n=>({ cient:n.cient, comun:n.comun||'', pisos:-1, am:'', sin:'', nueva:true }));
+  _catalogo = asignarAbrev(base.concat(nuevas));
+  _catalogo.forEach(e=>{
+    e._ab = norm(e.ab); e._abC = e._ab.replace(/\s+/g,'');
+    e._sci = norm(e.cient); e._sciW = e._sci.split(/\s+/);
+    e._com = norm(e.comun); e._comW = e._com.split(/\s+/); e._sin = norm(e.sin);
+  });
+  return _catalogo;
+}
+const especie = cient => catalogo().find(e=>e.cient===cient);
+const abrev = cient => (especie(cient) || asignarAbrev([{cient}])[0]).ab;
 function toast(msg){
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), 1600);
 }
 const eco = id => ECOSISTEMAS.find(e=>e.id===id);
 const ecoNombre = id => (eco(id)||{}).nombre || id || '';
-function especiesDe(ecoId){
-  const base = (eco(ecoId)||{especies:[]}).especies.map(([c,n])=>({cient:c, comun:n}));
-  const extra = (S.especiesExtra[ecoId]||[]);
-  const all = base.concat(extra);
-  all.forEach(e=>{ e.ab = abrev(e.cient); });
-  return all;
+// ¿La especie está citada en el piso de la parcela? (las nuevas y "Toda Tenerife" cuentan como sí)
+function enPiso(e, ecoId){
+  const i = PISOS.findIndex(p=>p.id===ecoId);
+  return i < 0 || e.pisos < 0 || (e.pisos & (1<<i)) !== 0;
 }
 const parcela = id => S.parcelas.find(p=>p.id===id);
 const totalPlantas = p => p.registros.reduce((s,r)=>s + (r.mult==null ? 1 : r.mult), 0);
 
 /* ---------- Buscador de especies ---------- */
-function buscar(lista, q){
+// Busca en todas las especies de Tenerife; las del piso de la parcela salen primero.
+function buscar(q, ecoId, max = 8){
   const nq = norm(q);
   if(!nq) return [];
   const compact = nq.replace(/[\s.]+/g,'');
   const toks = nq.split(/\s+/);
   const out = [];
-  for(const e of lista){
-    const ab = norm(e.ab), abC = ab.replace(/\s+/g,'');
-    const sci = norm(e.cient), sciW = sci.split(/\s+/);
-    const com = norm(e.comun);
+  for(const e of catalogo()){
     let rank = -1;
-    if(abC.startsWith(compact) || ab.startsWith(nq)) rank = 0;
-    else if(sci.startsWith(nq)) rank = 1;
-    else if(com && com.startsWith(nq)) rank = 2;
-    else if(toks.length >= 2 && toks.every((t,i)=> sciW[i] && sciW[i].startsWith(t))) rank = 1;
-    if(rank >= 0) out.push({e, rank});
+    if(e._abC.startsWith(compact) || e._ab.startsWith(nq)) rank = 0;
+    else if(e._sci.startsWith(nq)) rank = 1;
+    else if(toks.length >= 2 && toks.every((t,i)=> e._sciW[i] && e._sciW[i].startsWith(t))) rank = 1;
+    else if(e._com && (e._com.startsWith(nq) || e._comW.some(w=>w.startsWith(nq) && w.length>2))) rank = 2;
+    else if(e._sin && e._sin.startsWith(nq)) rank = 3;
+    else if(e._sciW[1] && e._sciW[1].startsWith(nq)) rank = 4;   // por el epíteto
+    if(rank >= 0) out.push({ e, rank, fuera: !enPiso(e, ecoId) });
   }
-  out.sort((a,b)=> a.rank-b.rank || a.e.cient.localeCompare(b.e.cient));
-  return out.slice(0,8).map(x=>x.e);
+  out.sort((a,b)=> (a.fuera - b.fuera) || (a.rank - b.rank) || a.e.cient.localeCompare(b.e.cient));
+  return out.slice(0, max);
+}
+// Las 5 especies con más registros en la parcela (en empate, la usada más recientemente)
+function frecuentes(p, n = 5){
+  const c = new Map();
+  p.registros.forEach((r,i)=>{ const x = c.get(r.especie) || {n:0, ult:0}; x.n++; x.ult = i; c.set(r.especie, x); });
+  return [...c.entries()].sort((a,b)=> b[1].n - a[1].n || b[1].ult - a[1].ult).slice(0,n).map(([cient,x])=>({cient, n:x.n}));
 }
 
 /* ---------- Navegación ---------- */
@@ -300,7 +312,7 @@ function renderFicha(){
     <div class="card">
       <div class="field"><label class="f">Nombre de la parcela <span class="req">*</span></label>
         <input id="fNombre" value="${esc(d.nombre)}" autocomplete="off" placeholder="Ej. P-03 Llano de Ucanca"></div>
-      <div class="field"><label class="f">Ecosistema <span class="req">*</span></label>
+      <div class="field"><label class="f">Ecosistema (piso de vegetación) <span class="req">*</span></label>
         <select id="fEco"><option value="">Elige…</option>
           ${ECOSISTEMAS.map(e=>`<option value="${e.id}" ${e.id===d.ecosistema?'selected':''}>${esc(e.nombre)}</option>`).join('')}
         </select></div>
@@ -359,8 +371,6 @@ function renderParcela(){
   if(!p) return ir({vista:'inicio'});
   if(!F || F.parcela !== p.id){ F = formVacio(); F.parcela = p.id; }
   const regs = [...p.registros].reverse();
-  const recientes = [];
-  for(const r of regs){ if(!recientes.includes(r.especie)) recientes.push(r.especie); if(recientes.length>=6) break; }
   const ed = F.editId ? p.registros.find(r=>r.id===F.editId) : null;
 
   $('#app').innerHTML = `
@@ -417,7 +427,7 @@ function renderParcela(){
     $('#rMult').value = ed.mult==null ? '' : fmt(ed.mult);
     $('#rSeco').value = fmt(ed.seco); $('#rNotas').value = ed.notas || '';
   }
-  pintarEspecie(p, recientes);
+  pintarEspecie(p);
   pintarDanos(); pintarSeco();
 
   $('#volver').onclick = ()=>{ F = null; ir({vista:'inicio'}); };
@@ -471,45 +481,49 @@ function filaRegistro(r){
   </button></div>`;
 }
 
-function pintarEspecie(p, recientes){
+function pintarEspecie(p){
   const box = $('#espBox');
-  const lista = especiesDe(p.ecosistema);
+  const frec = frecuentes(p);
+  const elegir = cient => { F.especie = cient; F.q = ''; pintarEspecie(p); $('#rAlt').focus(); };
+  const botonesFrec = frec.length ? `<div class="frec">${frec.map(f=>`
+      <button class="fbtn ${f.cient===F.especie?'on':''}" data-rec="${esc(f.cient)}" title="${esc(f.cient)}">
+        <span class="fab">${esc(abrev(f.cient))}</span><span class="fn">${f.n}</span></button>`).join('')}</div>` : '';
   if(F.especie){
-    const e = lista.find(x=>x.cient===F.especie) || {cient:F.especie, comun:'', ab:abrev(F.especie)};
-    box.innerHTML = `<div class="picked"><span class="ab">${esc(e.ab)}</span>
+    const e = especie(F.especie) || {cient:F.especie, comun:'', ab:abrev(F.especie)};
+    box.innerHTML = botonesFrec + `<div class="picked"><span class="ab">${esc(e.ab)}</span>
       <div class="grow"><div class="sci">${esc(e.cient)}</div>${e.comun?`<div class="com">${esc(e.comun)}</div>`:''}</div>
       <button class="x" id="espQuitar" aria-label="Cambiar especie">✕</button></div>`;
-    $('#espQuitar').onclick = ()=>{ F.especie = null; F.q = ''; pintarEspecie(p, recientes); $('#espQ').focus(); };
-    return;
+    $('#espQuitar').onclick = ()=>{ F.especie = null; F.q = ''; pintarEspecie(p); $('#espQ').focus(); };
+  } else {
+    box.innerHTML = botonesFrec + `<input id="espQ" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+        placeholder="Escribe: Cyt sup, retama, Echium…" value="${esc(F.q)}">
+      <div id="espRes"></div>`;
+    const q = $('#espQ');
+    const pintarRes = ()=>{
+      F.q = q.value;
+      const r = $('#espRes');
+      if(!q.value.trim()){ r.innerHTML = ''; return; }
+      const res = buscar(q.value, p.ecosistema);
+      r.innerHTML = `<div class="results">${res.map(({e, fuera},i)=>`
+          <button class="res ${i===0?'first':''} ${fuera?'fuera':''}" data-pick="${esc(e.cient)}"><span class="ab">${esc(e.ab)}</span>
+            <span class="grow"><span class="sci">${esc(e.cient)}</span>${e.comun?` <span class="com">· ${esc(e.comun)}</span>`:''}
+            ${e.sin && norm(e.sin).startsWith(norm(q.value)) ? `<span class="com"> (= ${esc(e.sin)})</span>`:''}
+            ${fuera?'<span class="tag">otro piso</span>':''}${e.nueva?'<span class="tag">añadida</span>':''}${/^(CR|EN|VU)$/.test(e.am)?`<span class="tag am">${e.am}</span>`:''}</span></button>`).join('')}
+          <button class="res" id="espNueva"><span class="ab">+</span><span>Añadir especie nueva${res.length?'':' (no hay coincidencias)'}</span></button>
+        </div>`;
+      r.querySelectorAll('[data-pick]').forEach(b=> b.onclick = ()=> elegir(b.dataset.pick));
+      $('#espNueva').onclick = ()=> nuevaEspecie(q.value, elegir);
+    };
+    q.addEventListener('input', pintarRes);
+    q.addEventListener('keydown', ev=>{
+      if(ev.key==='Enter'){ ev.preventDefault(); const res = buscar(q.value, p.ecosistema, 1); if(res[0]) elegir(res[0].e.cient); }
+    });
+    pintarRes();
   }
-  box.innerHTML = `<input id="espQ" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
-      placeholder="Escribe: Spa sup, retama, Echium…" value="${esc(F.q)}">
-    <div id="espRes"></div>
-    ${recientes.length ? `<div class="chips recent">${recientes.map(c=>`<button class="chip" data-rec="${esc(c)}">${esc(abrev(c))}</button>`).join('')}</div>` : ''}`;
-  const q = $('#espQ');
-  const elegir = cient => { F.especie = cient; F.q = ''; pintarEspecie(p, recientes); $('#rAlt').focus(); };
-  const pintarRes = ()=>{
-    F.q = q.value;
-    const res = buscar(lista, q.value);
-    const r = $('#espRes');
-    if(!q.value.trim()){ r.innerHTML = ''; return; }
-    r.innerHTML = `<div class="results">${res.map((e,i)=>`
-        <button class="res ${i===0?'first':''}" data-pick="${esc(e.cient)}"><span class="ab">${esc(e.ab)}</span>
-          <span><span class="sci">${esc(e.cient)}</span>${e.comun?` <span class="com">· ${esc(e.comun)}</span>`:''}</span></button>`).join('')}
-        <button class="res" id="espNueva"><span class="ab">+</span><span>Añadir especie nueva${res.length?'':' (no hay coincidencias)'}</span></button>
-      </div>`;
-    r.querySelectorAll('[data-pick]').forEach(b=> b.onclick = ()=> elegir(b.dataset.pick));
-    $('#espNueva').onclick = ()=> nuevaEspecie(p, q.value, elegir);
-  };
-  q.addEventListener('input', pintarRes);
-  q.addEventListener('keydown', ev=>{
-    if(ev.key==='Enter'){ ev.preventDefault(); const res = buscar(lista, q.value); if(res[0]) elegir(res[0].cient); }
-  });
   box.querySelectorAll('[data-rec]').forEach(b=> b.onclick = ()=> elegir(b.dataset.rec));
-  pintarRes();
 }
 
-function nuevaEspecie(p, texto, elegir){
+function nuevaEspecie(texto, elegir){
   const dlg = $('#dlgEsp');
   const t = texto.trim();
   const pareceCient = /^[A-Za-z]+\s+[a-z]/.test(t) && t.split(/\s+/).length>=2;
@@ -521,11 +535,12 @@ function nuevaEspecie(p, texto, elegir){
   $('#nsOk').onclick = ()=>{
     const c = $('#nsCient').value.trim().replace(/\s+/g,' ');
     if(c.split(' ').length < 2){ $('#nsErr').textContent = 'Pon género y epíteto (dos palabras).'; return; }
-    const cient = c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
-    const ya = especiesDe(p.ecosistema).find(e=> norm(e.cient)===norm(cient));
+    const w = c.split(' ');
+    const cient = cap(w[0]) + ' ' + w.slice(1).join(' ').toLowerCase();
+    const ya = catalogo().find(e=> norm(e.cient)===norm(cient));
     if(!ya){
-      (S.especiesExtra[p.ecosistema] = S.especiesExtra[p.ecosistema] || []).push({cient, comun:$('#nsCom').value.trim()});
-      save();
+      S.especiesNuevas.push({ cient, comun:$('#nsCom').value.trim(), creada:new Date().toISOString() });
+      save(); _catalogo = null;
     }
     dlg.close(); elegir(ya ? ya.cient : cient);
   };
@@ -619,7 +634,7 @@ $('#fileImport').addEventListener('change', async ev=>{
     const d = JSON.parse(await f.text());
     if(!d || !Array.isArray(d.parcelas)) throw new Error('El archivo no es una copia de esta app.');
     if(!confirm(`La copia tiene ${d.parcelas.length} parcelas. ¿Reemplazar los datos de este dispositivo?`)) return;
-    S = Object.assign({especiesExtra:{}, observador:''}, d); save(); F = null; ir({vista:'inicio'}); toast('Copia cargada');
+    S = migrar(d); _catalogo = null; save(); F = null; ir({vista:'inicio'}); toast('Copia cargada');
   }catch(e){ alert('No se ha podido cargar: ' + e.message); }
 });
 
